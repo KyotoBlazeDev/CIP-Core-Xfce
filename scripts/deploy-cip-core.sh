@@ -48,7 +48,7 @@ if [ "${NO_KERNEL}" = "enable" ]; then
 	BASE_PATH="${BASE_PATH}-nokernel"
 fi
 
-if [ -f "${BASE_PATH}.wic" ]; then
+if [ -f "${BASE_PATH}.wic.zst" ]; then
 	echo "Uploading artifacts..."
 	if [ "$DEPLOY" = "swus" ]; then
 		aws s3 cp --no-progress --acl public-read "${BASE_PATH}.swu" "${S3_TARGET}"
@@ -58,13 +58,11 @@ if [ -f "${BASE_PATH}.wic" ]; then
 	elif [ "$DEPLOY" = "wic-partitions" ]; then
 		# deploy individual wic partitions, helpful for RB tests
 		cd build/tmp/deploy/images/"$TARGET"
-		tar --ignore-failed-read -cJf "${BASE_FILENAME}-wic-partitions.tar.xz" "${BASE_FILENAME}".wic.p*
-		aws s3 cp --no-progress --acl public-read "${BASE_FILENAME}-wic-partitions.tar.xz" "${S3_TARGET}"
+		tar --ignore-failed-read --zst -cf "${BASE_FILENAME}-wic-partitions.tar.zst" "${BASE_FILENAME}".wic.p*
+		aws s3 cp --no-progress --acl public-read "${BASE_FILENAME}-wic-partitions.tar.zst" "${S3_TARGET}"
 		cd -
 	else
-		echo "Compressing $BASE_FILENAME.wic..."
-		xz -9 -k -T0 "${BASE_PATH}.wic"
-		aws s3 cp --no-progress --acl public-read "${BASE_PATH}.wic.xz" "${S3_TARGET}"
+		aws s3 cp --no-progress --acl public-read "${BASE_PATH}.wic.zst" "${S3_TARGET}"
 		aws s3 cp --no-progress --acl public-read "${BASE_PATH}.wic.bmap" "${S3_TARGET}"
 
 		if [ -f "build/tmp/deploy/images/$TARGET/firmware.bin" ]; then

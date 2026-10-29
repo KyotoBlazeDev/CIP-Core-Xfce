@@ -16,7 +16,7 @@ header:
 
 local_conf_header:
   secure-boot-image: |
-    IMAGE_FSTYPES = "wic"
+    IMAGE_FSTYPES = "wic wic.zst"
     IMAGE_TYPEDEP:wic += "verity"
     SWU_ROOTFS_TYPE = "verity"
     WKS_FILE = "${MACHINE}-efibootguard-secureboot.wks.in"

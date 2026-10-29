@@ -76,12 +76,12 @@
         local base_url="${BASE_S3_URL}/${CI_COMMIT_REF_SLUG}/${target}/rb/build${build_num}";
 
         mkdir -p "$dir";
-        wget "${base_url}/${image_base}-${release}-${target}.wic.xz";
-        xz -d ${image_base}-${release}-${target}.wic.xz && mv ${image_base}-${release}-${target}.wic "$dir";
+        wget "${base_url}/${image_base}-${release}-${target}.wic.zst";
+        zstd -d ${image_base}-${release}-${target}.wic.zst && mv ${image_base}-${release}-${target}.wic "$dir";
 
-        wget "${base_url}/${image_base}-${release}-${target}-wic-partitions.tar.xz";
-        tar -xJf ${image_base}-${release}-${target}-wic-partitions.tar.xz -C "$dir";
-        rm -f ${image_base}-${release}-${target}-wic-partitions.tar.xz;
+        wget "${base_url}/${image_base}-${release}-${target}-wic-partitions.tar.zst";
+        tar -xf ${image_base}-${release}-${target}-wic-partitions.tar.zst -C "$dir";
+        rm -f ${image_base}-${release}-${target}-wic-partitions.tar.zst;
 
         if [ "${extension}" != "none" ]; then
           wget "${base_url}/${image_base}-${release}-${target}.swu" && mv ${image_base}-${release}-${target}.swu "$dir";

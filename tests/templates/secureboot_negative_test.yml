@@ -37,8 +37,8 @@ actions:
       minutes: 30
     images:
       system:
-        url: #project_url#/#branch#/#architecture#/cip-core-image-security-cip-core-#distribution#-#architecture#.wic.xz
-        compression: xz
+        url: #project_url#/#branch#/#architecture#/cip-core-image-security-cip-core-#distribution#-#architecture#.wic.zst
+        compression: zstd
     postprocess:
       docker:
         image: debian:bookworm
