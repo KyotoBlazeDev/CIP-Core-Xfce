@@ -17,7 +17,7 @@ testing.
 
 A swu contains the signature of the `sw-description` file with the name `sw-description.sig`.
 This `sw-description.sig` file is created during the swu image build process by calling
-a script call `/usr/bin/sign-swu`. The script is called by class classes/swupdate.bbclass.
+a script called `/usr/bin/sign-swu`. The script is called by class `classes-recipe/swupdate.bbclass`.
 The script has the following call signature:
 
 `sign-swu <unsigned file name> <signature file name>`
