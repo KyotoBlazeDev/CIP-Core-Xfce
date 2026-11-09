@@ -18,7 +18,7 @@ DEB_BUILD_OPTIONS += "nodoc"
 FILESEXTRAPATHS:prepend := "${FILE_DIRNAME}/files/2021.11:"
 
 SRC_URI = "git://salsa.debian.org/debian/swupdate.git;protocol=https;branch=debian/master"
-SRCREV ="344548c816b555c58ec199f31e45703897d23fb5"
+SRCREV = "344548c816b555c58ec199f31e45703897d23fb5"
 
 # add options to DEB_BUILD_PROFILES
 SRC_URI += "file://0001-debian-Remove-SWUpdate-USB-service-and-Udev-rules.patch \

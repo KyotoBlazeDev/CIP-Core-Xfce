@@ -13,7 +13,7 @@ inherit dpkg
 
 MAINTAINER = "cip-dev <cip-dev@lists.cip-project.org>"
 
-CHANGELOG_V="<orig-version>+cip"
+CHANGELOG_V = "<orig-version>+cip"
 
 SRC_URI = "apt://${BPN}"
 SRC_URI += "file://0001-Honor-the-SOURCE_DATE_EPOCH-variable.patch;apply=no"

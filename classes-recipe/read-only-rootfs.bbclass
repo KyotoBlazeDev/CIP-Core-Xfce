@@ -36,9 +36,9 @@ IMAGE_INSTALL:remove:bullseye = " immutable-rootfs"
 IMAGE_INSTALL:remove:buster = " journald-config"
 IMAGE_INSTALL:remove:bullsye = " journald-config"
 
-ROOTFS_POSTPROCESS_COMMAND:append =" copy_dpkg_state"
-ROOTFS_POSTPROCESS_COMMAND:remove:buster =" copy_dpkg_state"
-ROOTFS_POSTPROCESS_COMMAND:remove:bullseye =" copy_dpkg_state"
+ROOTFS_POSTPROCESS_COMMAND:append = " copy_dpkg_state"
+ROOTFS_POSTPROCESS_COMMAND:remove:buster = " copy_dpkg_state"
+ROOTFS_POSTPROCESS_COMMAND:remove:bullseye = " copy_dpkg_state"
 
 IMMUTABLE_DATA_DIR ??= "/usr/share/immutable-data"
 

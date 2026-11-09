@@ -16,7 +16,7 @@ DESCRIPTION = "Systemd unit to mount a dedicated /home filesystem"
 SRC_URI = "file://postinst \
            file://home.mount"
 
-do_install[cleandirs]+="${D}/lib/systemd/system"
+do_install[cleandirs] += "${D}/lib/systemd/system"
 do_install() {
     install -m 0644 ${WORKDIR}/home.mount ${D}/lib/systemd/system/home.mount
 

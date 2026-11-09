@@ -23,7 +23,7 @@ SRC_URI += " \
 SRC_URI:append:buster = " \
     file://0001-Lower-requirements-on-setuptools.patch"
 
-SRCREV ="8db4615b2c3ee0a9332b6030687e1179fcfc8670"
+SRCREV = "8db4615b2c3ee0a9332b6030687e1179fcfc8670"
 
 # We don't have pristine-tar in this tree hence use this option
 GBP_EXTRA_OPTIONS = "--git-no-pristine-tar"

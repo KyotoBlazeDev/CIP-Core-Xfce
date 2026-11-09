@@ -34,4 +34,4 @@ local_conf_header:
     IMAGE_FSTYPES:remove:qemu-amd64 = "ext4"
     IMAGE_FSTYPES:remove:qemu-arm64 = "ext4"
     IMAGE_FSTYPES:remove:qemu-arm = "ext4"
-    IMAGE_FSTYPES:remove:qemu-riscv64= "ext4"
+    IMAGE_FSTYPES:remove:qemu-riscv64 = "ext4"
