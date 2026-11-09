@@ -21,7 +21,7 @@ SRC_URI = "file://postinst \
            file://ssh-hardening.conf"
 
 DEPENDS = "customizations sshd-regen-keys"
-DEBIAN_DEPENDS = "customizations, sshd-regen-keys, libpam-google-authenticator, libpam-modules, libpam-runtime, auditd"
+DEBIAN_DEPENDS = "customizations, sshd-regen-keys, libpam-google-authenticator, libpam-modules, libpam-runtime, auditd, adduser "
 
 # Append PAM module dependencies for password strength enforcement based on the Debian version
 # - libpam-cracklib: Deprecated, but still supported in Debian Buster and Bullseye.
