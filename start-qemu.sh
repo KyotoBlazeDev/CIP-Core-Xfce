@@ -273,7 +273,7 @@ else
 		IMAGE_FILE=$(ls ${IMAGE_PREFIX}.ext4)
 
 		KERNEL_FILE=$(ls ${IMAGE_PREFIX}-vmlinu* | tail -1)
-		INITRD_FILE=$(ls ${IMAGE_PREFIX}-initrd.img* | tail -1)
+		INITRD_FILE=$(ls ${IMAGE_PREFIX%%$TEST_IMAGE}-initrd.img* | tail -1)
 
 		${QEMU_PATH}${QEMU} \
 			-drive file=${IMAGE_FILE},discard=unmap,if=none,id=disk,format=raw \
