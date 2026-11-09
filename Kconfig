@@ -133,13 +133,13 @@ config KAS_INCLUDE_BOARD
 	default "kas/board/qemu-arm64.yml" if TARGET_QEMU_ARM64
 	default "kas/board/hihope-rzg2m.yml" if TARGET_HIHOPE_RZG2M
 	default "kas/board/ti-am62px-sk.yml" if TARGET_TI_AM62PX_SK
+	default "kas/board/rzt2h-evk.yml" if TARGET_RZT2H
 	default "kas/board/qemu-arm.yml" if TARGET_QEMU_ARM
 	default "kas/board/bbb.yml" if TARGET_BBB
 	default "kas/board/de0-nano-soc.yml" if TARGET_DE0_NANO_SOC
 	default "kas/board/iwg20m.yml" if TARGET_IWG20D
 	default "kas/board/qemu-riscv64.yml" if TARGET_QEMU_RISCV64
 	default "kas/board/beaglev-fire.yml" if TARGET_BEAGLEV_FIRE
-	default "kas/board/rzt2h-evk.yml" if TARGET_RZT2H
 
 comment "Kernel options"
 
