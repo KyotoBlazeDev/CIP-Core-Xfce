@@ -17,4 +17,4 @@ part --source empty --sourceparams "${ABROOTFS_SOURCEPARAMS_B}" --align 1024 --f
 ${WIC_HOME_PARTITION}
 ${WIC_VAR_PARTITION}
 
-bootloader --ptable gpt-hybrid --source "de0-nano-soc-firmware" --append="rootwait console=ttyO0,115200 omap_wdt.early_enable=1 omap_wdt.nowayout=1 watchdog.handle_boot_enabled=0"
+bootloader --ptable gpt-hybrid --source "de0-nano-soc-firmware" --append="rootwait console=ttyS0,115200 omap_wdt.early_enable=1 omap_wdt.nowayout=1 watchdog.handle_boot_enabled=0"
