@@ -1,7 +1,7 @@
 #
 # CIP Core, generic profile
 #
-# Copyright (c) Siemens AG, 2025
+# Copyright (c) Siemens AG, 2025-2026
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -21,6 +21,9 @@ do_prepare_build:append() {
     cat <<EOF >> ${S}/configs/${U_BOOT_CONFIG}
 ### DE0 Nano SoC extra config
 CONFIG_USE_BOOTCOMMAND=y
-CONFIG_BOOTCOMMAND="bootefi bootmgr"
+CONFIG_BOOTCOMMAND="bootefi bootmgr
+CONFIG_WDT=y
+CONFIG_WATCHDOG_TIMEOUT_MSECS=60000
+CONFIG_DESIGNWARE_WATCHDOG=y"
 EOF
 }
