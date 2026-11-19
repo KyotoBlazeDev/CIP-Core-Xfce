@@ -14,4 +14,4 @@ FROM debian:stable
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gettext-base curl xmlstarlet lavacli
+    apt-get install -y --no-install-recommends gettext-base python3-yaml curl xmlstarlet lavacli
