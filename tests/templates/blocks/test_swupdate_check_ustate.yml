@@ -1,0 +1,26 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+# TEST BLOCK 2
+# Fail the job if ustate is not ${updatestate} after reboot
+- test:
+    timeout:
+      minutes: 5
+    definitions:
+    - repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: sample-test
+          description: "check boot loader environment variables"
+        run:
+          steps:
+            - if [ $(bg_printenv | grep ustate | awk 'FNR == 2{print $2}') = ${updatestate} ]; then bg_setenv -c; else lava-test-raise "Fail job"; fi
+      from: inline
+      name: sample-test-2
+      path: inline/sample-test.yaml

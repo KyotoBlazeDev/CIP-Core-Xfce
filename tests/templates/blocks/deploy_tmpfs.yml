@@ -1,0 +1,22 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+# DEPLOY BLOCK
+# images.firmware (qemu-arm64, qemu-arm) is added by scripts/lava_jobs.py
+- deploy:
+    timeout:
+      minutes: 30
+    to: tmpfs
+    images:
+      system:
+        image_arg: '-drive file={system},discard=unmap,if=none,id=disk,format=raw -m 1G -serial mon:stdio
+                    -nographic -netdev user,id=net,hostfwd=tcp:127.0.0.1:22222-:22 -chardev socket,id=chrtpm,path=/tmp/qemu-swtpm.sock
+                    -tpmdev emulator,id=tpm0,chardev=chrtpm ${imageargs}'
+        url: ${project_url}/${branch}/${architecture}/cip-core-image-security-cip-core-${distribution}-${architecture}.wic.zst
+        compression: zstd

@@ -1,0 +1,193 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+# QEMU LAVA job definitions, assembled by scripts/lava_jobs.py.
+#
+# Per test:
+#   output_name:  file name, format string over {test} and {target}
+#   blocks:       ordered fragment names (tests/templates/blocks, steps);
+#                 mapping fragments become top-level keys, list fragments
+#                 are appended to `actions`
+#   steps:        optional; `fragment: <name>` or `inline: [..]`, inserted
+#                 into the first empty `steps: []` list
+#   values:       substitution values (job_title, monitors, ...); updatestate
+#                 is the expected ustate in the check step (`) = N`), default 2
+#   per_arch:     {<target>: {values: {...}, disk: vda, efi_name: ...}}
+#   targets:      optional list of supported targets (others: nothing written);
+#                 default: the QEMU targets. M-COM (x86-uefi) must be listed.
+#   per_arch.<target>.blocks: replaces `blocks` for that target (M-COM)
+#   replace:      ordered [old, new] string replacements over the parsed job
+#   per_arch.<target>.replace: same, for that target only (after `replace`)
+#   broken_swu:   deploy the '-broken.swu' update image
+#   swap_ovmf:    use OVMF keys of the other release (mismatch keys test)
+
+tests:
+  IEC:
+    output_name: "{test}_{target}.yml"
+    blocks: [header_qemu, action_tpm, deploy_tmpfs, boot_qemu, test_iec, context_qemu]
+    values:
+      job_title: IEC layer testing
+    targets: &with_mcom [qemu-amd64, qemu-arm64, qemu-arm, x86-uefi]
+    per_arch:
+      x86-uefi:
+        blocks: [header_mcom, deploy_mcom, boot_mcom, test_iec]
+        values:
+          test_function: IEC
+
+  secure-boot:
+    output_name: "{test}_{target}.yml"
+    blocks: [header_qemu, action_tpm, deploy_tmpfs, boot_qemu_secureboot, context_qemu]
+    values:
+      job_title: secure boot testing
+    targets: *with_mcom
+    per_arch:
+      x86-uefi:
+        blocks: [header_mcom, deploy_mcom, boot_mcom_secureboot]
+        values:
+          test_function: secure-boot
+
+  swupdate:
+    output_name: "{test}_{target}.yml"
+    blocks: &swupdate_blocks
+      [header_qemu, action_tpm, deploy_tmpfs, boot_qemu, test_swupdate_apply,
+       tpm_restart, boot_after_update, test_swupdate_check_ustate, context_qemu]
+    values:
+      job_title: software update testing
+    targets: *with_mcom
+    per_arch:
+      x86-uefi:
+        blocks:
+          [header_mcom, deploy_mcom_swu, deploy_mcom, boot_mcom,
+           test_swupdate_mcom, boot_mcom_after_update, test_swupdate_check_ustate]
+        values:
+          test_function: swupdate
+          updatestate: 2
+        replace:
+          - ["overlay-1.1.1.4", "overlay-2.1.1.4"]
+
+  kernel-panic:
+    output_name: "{test}.yml"
+    blocks: *swupdate_blocks
+    values:
+      job_title: kernel-panic_rollback_testing
+      updatestate: 3
+    replace:
+      - ["kernel: C:BOOT1:linux.efi", "Kernel panic - not syncing: sysrq triggered crash"]
+    broken_swu: true
+
+  initramfs-crash:
+    output_name: "{test}.yml"
+    blocks: *swupdate_blocks
+    values:
+      job_title: initramfs-crash_rollback_testing
+      updatestate: 3
+    replace:
+      - ["kernel: C:BOOT1:linux.efi", "Can't open verity rootfs - continuing will lead to a broken trust chain!"]
+      - ["echo software update is successful!!", "dd if=/dev/urandom of=/dev/sda5 bs=512 count=1"]
+
+  swupdate-reboot-without-confirm:
+    output_name: "{test}_reboot_without_confirm_{target}.yml"
+    blocks:
+      [header_qemu, action_tpm, deploy_tmpfs, boot_qemu, test_swupdate_apply,
+       tpm_restart, boot_after_update, test_swupdate_check_ustate,
+       reboot_without_confirm, context_qemu]
+    values:
+      job_title: software update testing
+    replace:
+      - ["bg_setenv -c", "echo No update confirm"]
+
+  secure-boot-unsigned-kernel:
+    output_name: "{test}_unsigned_kernel_{target}.yml"
+    blocks: &secureboot_negative_blocks
+      [header_qemu, action_tpm, deploy_downloads_postprocess,
+       deploy_tmpfs_downloaded, boot_qemu_noprompt, monitor, context_qemu]
+    steps: {fragment: unsigned_kernel}
+    values:
+      job_title: secure boot testing
+      artifact: linux
+      start_monitor: Cannot load specified kernel image
+      end_monitor: Access Denied
+    per_arch:
+      qemu-arm64: &unsigned_kernel_arm
+        disk: vda
+        values:
+          start_monitor: Image not authenticated
+          end_monitor: Application failed
+      qemu-arm: *unsigned_kernel_arm
+
+  secure-boot-unsigned-bootloader:
+    output_name: "{test}_unsigned_bootloader_{target}.yml"
+    blocks: *secureboot_negative_blocks
+    steps: {fragment: unsigned_bootloader}
+    values:
+      job_title: secure boot testing
+      artifact: bootloader
+      start_monitor: Access Denied
+      end_monitor: "BdsDxe: failed to load Boot"
+    per_arch:
+      qemu-arm64:
+        disk: vda
+        efi_name: bootaa64.efi
+        values: &unsigned_bootloader_arm
+          start_monitor: Image not authenticated
+          end_monitor: EFI Boot failed!
+      qemu-arm:
+        disk: vda
+        efi_name: bootarm.efi
+        values: *unsigned_bootloader_arm
+
+  secure-boot-corrupt-rootfs:
+    output_name: "{test}_corrupt_rootfs_{target}.yml"
+    blocks: *secureboot_negative_blocks
+    steps: {fragment: corrupt_rootfs}
+    values:
+      job_title: secure boot testing
+      artifact: rootfs
+      start_monitor: "EFI stub: UEFI Secure Boot is enabled."
+      end_monitor: "reboot: Restarting system with command 'dm-verity device corrupted'"
+    per_arch:
+      qemu-arm64:
+        efi_name: bootaa64.efi
+      qemu-arm:
+        efi_name: bootarm.efi
+
+  secure-boot-mismatch-keys:
+    output_name: "{test}_mismatch_keys_{target}.yml"
+    targets: [qemu-amd64]
+    blocks: *secureboot_negative_blocks
+    steps: {inline: ["echo 'no postprocess steps'"]}
+    swap_ovmf: true
+    values:
+      job_title: secure boot testing
+      artifact: keys
+      start_monitor: Access Denied
+      end_monitor: "BdsDxe: failed to load Boot"
+
+  swupdate-corrupt-swu:
+    output_name: "{test}_corrupt_swu_{target}.yml"
+    blocks: &swupdate_negative_blocks
+      [header_qemu, action_tpm, deploy_swu, deploy_tmpfs, boot_qemu,
+       test_swupdate_inline, context_qemu]
+    steps: {fragment: corrupt_swu}
+    values:
+      job_title: software update testing
+
+  swupdate-corrupt-swu-artifact:
+    output_name: "{test}_corrupt_swu_artifact_{target}.yml"
+    blocks: *swupdate_negative_blocks
+    steps: {fragment: corrupt_swu_artifact}
+    values:
+      job_title: software update testing
+
+  swupdate-apply-same-image-swu:
+    output_name: "{test}_same_uuid_{target}.yml"
+    blocks: *swupdate_negative_blocks
+    steps: {fragment: same_uuid}
+    values:
+      job_title: software update testing

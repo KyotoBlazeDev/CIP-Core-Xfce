@@ -1,0 +1,16 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+- deploy:
+    timeout:
+      minutes: 10
+    to: downloads
+    images:
+      image:
+        url: ${project_url}/${branch}/${architecture}/cip-core-image-security-cip-core-${distribution}-${architecture}.swu

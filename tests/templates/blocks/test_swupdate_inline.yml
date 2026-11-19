@@ -1,0 +1,26 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+# TEST_BLOCK
+# Fail the job if software update application error is not as expected
+# steps are inserted by code (see steps/)
+- test:
+    timeout:
+      minutes: 25
+    definitions:
+    - repository:
+        metadata:
+          format: Lava-Test Test Definition 1.0
+          name: sample-test
+          description: "Test software update by modifying the files"
+        run:
+          steps: []
+      from: inline
+      name: sample-test-1
+      path: inline/sample-test.yaml

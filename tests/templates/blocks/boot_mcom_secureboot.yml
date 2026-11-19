@@ -1,0 +1,30 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+# BOOT BLOCK (secure boot positive test)
+- boot:
+    method: minimal
+    timeout:
+      minutes: 45
+    reset: true
+    failure_retry: 1
+    prompts: ["root@demo:~#"]
+    auto_login:
+      login_prompt: "demo login:"
+      username: "root"
+      password_prompt: "Password:"
+      password: "CIPsecurity@123"
+      login_commands:
+        - if mountpoint /home; then mount -o remount,exec /home; else mount -o remount,exec /var; fi
+    transfer_overlay:
+      transfer_method: http
+      download_command: "curl -H 'Connection: close' -v --trace-time --output overlay-1.1.1.4.tar.gz"
+      unpack_command: rm -rf /home/lava; mkdir /home/lava; tar -C /home/lava/ -xf
+    parameters:
+      kernel-start-message: "EFI stub: UEFI Secure Boot is enabled."

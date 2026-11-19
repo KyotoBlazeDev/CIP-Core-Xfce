@@ -1,0 +1,29 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+job_name: mtda-mcom-${test_function}
+device_type: mcom-mtda
+timeouts:
+  job:
+    minutes: 180
+  action:
+    minutes: 95
+  connection:
+    minutes: 25
+priority: medium
+visibility: public
+context:
+  lava_test_results_dir: /home/lava/%s
+notify:
+  criteria:
+    status: finished
+  recipients:
+  - to:
+     method: email
+     email: cip-testing-results@lists.cip-project.org

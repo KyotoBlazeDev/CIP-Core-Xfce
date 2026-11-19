@@ -1,0 +1,15 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+# BOOT BLOCK (negative tests, no login; the monitor test follows)
+- boot:
+    timeout:
+      minutes: 25
+    method: qemu
+    media: tmpfs

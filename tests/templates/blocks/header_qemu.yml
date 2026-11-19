@@ -1,0 +1,31 @@
+#
+# Copyright (c) Siemens AG, 2026
+#
+# Authors:
+#  Quirin Gylstorff <quirin.gylstorff@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+#
+
+# ${job_title}: "IEC layer testing" | "secure boot testing" | "software update testing"
+device_type: qemu
+job_name: ${architecture} ${job_title}
+timeouts:
+  job:
+    minutes: 50
+  action:
+   minutes: 40
+  actions:
+    power-off:
+      seconds: 60
+priority: medium
+tags:
+- swtpm-jobs
+visibility: public
+notify:
+  criteria:
+    status: finished
+  recipients:
+  - to:
+     method: email
+     email: cip-testing-results@lists.cip-project.org
