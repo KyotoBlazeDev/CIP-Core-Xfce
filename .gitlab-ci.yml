@@ -49,6 +49,9 @@ default:
 .build_base:
   stage: build
   rules:
+    # Only build the lavacli container, see lavacli-container
+    - if: $LAVACLI_CONTAINER
+      when: never
     - if: $CI_COMMIT_TAG
       when: never
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -372,6 +375,9 @@ build:qemu-amd64-secure-boot-buster:
   extends:
     - .build_base
   rules:
+    # Only build the lavacli container, see lavacli-container
+    - if: $LAVACLI_CONTAINER
+      when: never
     - if: $CI_COMMIT_TAG
       when: never
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_RUN_UNSTABLE'
@@ -423,6 +429,9 @@ build:qemu-arm-base-sid:
   extends:
     - .build_base
   rules:
+    # Only build the lavacli container, see lavacli-container
+    - if: $LAVACLI_CONTAINER
+      when: never
     - if: $CI_COMMIT_TAG
       when: never
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_RUN_UNSTABLE'
@@ -473,6 +482,9 @@ build:qemu-arm-base-forky:
   stage: test
   image: $CI_REGISTRY_IMAGE/lavacli:$LAVACLI_TAG
   rules:
+    # Only build the lavacli container, see lavacli-container
+    - if: $LAVACLI_CONTAINER
+      when: never
     - if: $CI_COMMIT_TAG
       when: never
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -798,6 +810,9 @@ test:qemu-arm-swupdate-apply-same-image-swu:
   extends:
     - .test-cip-core
   rules:
+    # Only build the lavacli container, see lavacli-container
+    - if: $LAVACLI_CONTAINER
+      when: never
     - if: $CI_COMMIT_TAG
       when: never
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_RUN_UNSTABLE'
@@ -839,6 +854,9 @@ test:qemu-arm-IEC-sid:
   extends:
     - .test-cip-core
   rules:
+    # Only build the lavacli container, see lavacli-container
+    - if: $LAVACLI_CONTAINER
+      when: never
     - if: $CI_COMMIT_TAG
       when: never
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_RUN_UNSTABLE'
@@ -938,6 +956,9 @@ cve-checks:
   script:
     - scripts/run-cve-checks.sh
   rules:
+    # Only build the lavacli container, see lavacli-container
+    - if: $LAVACLI_CONTAINER
+      when: never
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
       when: never
     - when: manual
