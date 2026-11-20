@@ -64,7 +64,7 @@
     extension: security
     image_base: "cip-core-image-cip-core"
   before_script:
-    - apt update && DEBIAN_FRONTEND=noninteractive apt install -y diffoscope wget
+    - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y diffoscope wget zstd
   script:
     - if [ "${extension}" = "security" ]; then
         image_base="cip-core-image-security-cip-core";
