@@ -5,8 +5,9 @@ built on Debian Trixie, Xfce, Isar, and the Linux CIP kernel. The image includes
 desktop graphics and Wi-Fi profiles, first-boot enrollment, and recovery tools.
 
 > [!NOTE]
-> Trixie is the development baseline. The Linux 6.12-CIP desktop image is
-> under validation, and the Forky profile is experimental.
+> Trixie is the development baseline. The Linux 6.12-CIP image builds from
+> the GitHub checkout. Hardware validation of that exact WIC is pending,
+> and the Forky profile is experimental.
 
 ## Build the Trixie Xfce image
 
@@ -27,6 +28,14 @@ The build writes its artifacts to `build/tmp/deploy/images/x86-uefi/`.
 | `.wic` | Bootable disk image for USB or VM testing |
 | `.wic.spdx.json` | SPDX software bill of materials for the matching WIC |
 | `.wic.manifest` | Package and version list for the matching WIC |
+
+## Build validation
+
+On November 23, 2026, all 127 BitBake tasks passed from GitHub source
+commit [9344123](https://github.com/KyotoBlazeDev/CIP-Core-Xfce/commit/9344123bf5f96163b62a36d1572fa88de13248ce).
+The build produced the Trixie x86-UEFI WIC and its matching SPDX 2.3 report.
+The WIC manifest lists kernel package version
+`6.12.111-cip32+r0+yoga1+gpu1+wifi1`.
 
 ## Boot and test
 
