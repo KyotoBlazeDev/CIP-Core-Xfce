@@ -114,6 +114,7 @@ build:qemu-amd64-base:
     build_updates: enable
     separate_home_partition: enable
     deploy: enable
+    factory_reset: enable
 
 build:qemu-arm64-base:
   extends:
