@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+header:
+  version: 14
+  includes:
+    - kas/opt/6.12.yml
+
+local_conf_header:
+  xfce_cip32: |
+    PREFERRED_VERSION_linux-cip = "6.12.111-cip32"
+    IMAGE_FULLNAME:append = "-cip32"

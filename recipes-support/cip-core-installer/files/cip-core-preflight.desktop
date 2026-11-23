@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=CIP-Core Preflight
+Comment=Check system and hardware readiness
+Icon=utilities-terminal
+Exec=xfce4-terminal --hold --execute /usr/sbin/cip-core-installer
+TryExec=xfce4-terminal
+Terminal=false
+Categories=System;

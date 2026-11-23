@@ -1,0 +1,13 @@
+#
+# CIP Core, generic profile
+#
+# Copyright (c) Siemens AG, 2019-2026
+#
+# SPDX-License-Identifier: MIT
+#
+
+part /boot/efi --source bootimg-efi-isar --sourceparams "loader=grub-efi" --label efi --part-type EF00 --align 1024 --fsuuid 0x4321dcba --uuid cf142945-6fa1-4945-b0f2-b8d6226298c0 --use-uuid
+
+part / --source rootfs --fstype ext4 --mkfs-extraopts "-T default" --label platform --align 1024 --fsuuid 1f55d66a-40d8-11ee-be56-0242ac120002 --uuid f225331b-2d9c-45a2-bcfe-4a6e86287dfb --use-uuid --fspassno 1
+
+bootloader --ptable gpt --timeout 5 --configfile xfce-trixie-grub.cfg

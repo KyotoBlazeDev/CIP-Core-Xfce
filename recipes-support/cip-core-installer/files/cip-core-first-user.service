@@ -1,0 +1,22 @@
+[Unit]
+Description=CIP-Core first-boot user setup
+ConditionPathExists=/dev/tty1
+ConditionPathExists=/var/lib/cip-core/first-user-pending
+ConditionPathExists=!/var/lib/cip-core/first-user-complete
+After=systemd-user-sessions.service
+Before=getty@tty1.service display-manager.service
+
+[Service]
+Type=oneshot
+StateDirectory=cip-core
+ExecStartPre=-/usr/bin/chvt 1
+ExecStart=/usr/lib/cip-core/first-user-setup
+TimeoutStartSec=5min
+StandardInput=tty
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TTYReset=yes
+
+[Install]
+WantedBy=graphical.target

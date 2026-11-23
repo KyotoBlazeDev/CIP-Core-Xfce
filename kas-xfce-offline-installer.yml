@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+header:
+  version: 14
+
+local_conf_header:
+  xfce_offline_installer: |
+    CIP_XFCE_OFFLINE_INSTALLER = "1"

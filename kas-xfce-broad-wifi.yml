@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+header:
+  version: 14
+
+local_conf_header:
+  xfce_broad_wifi: |
+    CIP_XFCE_BROAD_WIFI = "1"

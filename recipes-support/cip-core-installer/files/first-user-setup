@@ -1,0 +1,95 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+
+set -eu
+export LC_ALL=C
+umask 077
+
+state=/var/lib/cip-core/first-user-complete
+pending=/var/lib/cip-core/first-user-pending
+exec 9>"${pending}.lock"
+flock -n 9 || exit 1
+[ -f "$pending" ] || exit 0
+[ ! -e "$state" ] || exit 0
+[ "$(id -u)" = 0 ] && [ -t 0 ] && [ -t 1 ] || exit 1
+
+printf '\nCIP-Core first-boot user setup\n'
+admin=no
+if grep -Fxq admin-required "$pending"; then
+    admin=yes
+    printf 'Create the first local administrator account.\n'
+else
+    printf 'Create a regular user on this booted system.\n'
+fi
+printf 'Press Enter with no name to skip for this boot.\n\n'
+printf 'Username (lowercase letters, digits, underscores or hyphens): '
+if ! name=$(timeout --foreground 45s sh -c 'IFS= read -r name && printf "%s" "$name"'); then
+    printf '\nSetup deferred. Continuing boot.\n'
+    exit 0
+fi
+[ -n "$name" ] || exit 0
+
+case "$name" in
+    [!a-z]*|*[!a-z0-9_-]*)
+        printf 'Invalid username. Setup will be offered on the next boot.\n'
+        exit 0
+        ;;
+esac
+if [ "${#name}" -gt 32 ]; then
+    printf 'Username must be at most 32 characters. Setup deferred.\n'
+    exit 0
+fi
+
+home=/home/$name
+resume=${pending}.account
+if [ -f "$resume" ]; then
+    read -r enrolled uid admin < "$resume"
+    if [ "$name" != "$enrolled" ] || [ "$(id -u "$name")" != "$uid" ]; then
+        printf 'Enrollment pending for %s. Retry with that account.\n' "$enrolled"
+        exit 1
+    fi
+else
+    if getent passwd "$name" >/dev/null || getent group "$name" >/dev/null ||
+        [ -e "$home" ] || [ -L "$home" ]; then
+        printf 'The username, group or home already exists. Setup deferred.\n'
+        exit 0
+    fi
+
+    if [ "$admin" = no ]; then
+        printf 'Grant sudo administrator access? [y/N]: '
+        if answer=$(timeout --foreground 45s sh -c 'IFS= read -r answer && printf "%s" "$answer"'); then
+            case "$answer" in
+                y|Y|yes|YES|Yes) admin=yes ;;
+            esac
+        fi
+    fi
+
+    if ! adduser --disabled-password --gecos '' --home "$home" "$name"; then
+        printf 'Account creation failed. Check the account state before retrying.\n'
+        exit 1
+    fi
+    printf '%s %s %s\n' "$name" "$(id -u "$name")" "$admin" > "$resume.tmp"
+    mv -- "$resume.tmp" "$resume"
+fi
+# A retry after password creation must never reset an established password.
+password_status=$(passwd -S "$name") || exit 1
+set -- $password_status
+if [ "${2:-}" != P ]; then
+    printf '\nSet the new login password.\n'
+    if ! passwd "$name"; then
+        printf 'Password setup deferred. Retry with the same username.\n'
+        exit 1
+    fi
+fi
+
+if [ "$admin" = yes ] && ! usermod -aG sudo "$name"; then
+    printf 'The user password is set, but sudo access could not be granted. Contact the local administrator.\n'
+    exit 1
+fi
+
+if ! mv -- "$pending" "$state"; then
+    printf 'The account was created, but the completion marker could not be saved.\n'
+    exit 1
+fi
+rm -f -- "$resume"
+printf '\nUser %s is ready. Continuing boot.\n' "$name"

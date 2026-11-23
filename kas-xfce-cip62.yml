@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+header:
+  version: 14
+
+local_conf_header:
+  xfce_cip62: |
+    PREFERRED_VERSION_linux-cip = "6.1.190-cip62"
+    IMAGE_FULLNAME:append:pn-cip-core-image-xfce = "-cip62"

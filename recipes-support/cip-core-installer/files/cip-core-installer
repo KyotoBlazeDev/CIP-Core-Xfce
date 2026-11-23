@@ -1,0 +1,392 @@
+#!/bin/sh
+
+usage() {
+    printf '%s\n' 'Usage: cip-core-installer [--help | --version]'
+}
+
+case "$#" in
+    0) ;;
+    1)
+        case "$1" in
+            --help) usage; exit 0 ;;
+            --version) printf '%s\n' 'CIP-Core Preflight 0.4'; exit 0 ;;
+            *) usage >&2; exit 64 ;;
+        esac ;;
+    *) usage >&2; exit 64 ;;
+esac
+
+export LC_ALL=C
+# Allow tests to provide synthetic firmware and device interfaces.
+sysfs=${CIP_PREFLIGHT_SYSFS:-/sys}
+pass=0
+warn=0
+fail=0
+unknown=0
+
+report() {
+    printf '[%s] %s - %s\n' "$1" "$2" "$3"
+    case "$1" in
+        PASS) pass=$((pass + 1)) ;;
+        WARN) warn=$((warn + 1)) ;;
+        UNKNOWN) unknown=$((unknown + 1)) ;;
+        FAIL) fail=$((fail + 1)) ;;
+    esac
+}
+
+probe() {
+    label=$1
+    shift
+    if ! command -v "$1" >/dev/null 2>&1; then
+        report UNKNOWN "$label" "$1 is unavailable"
+    elif output=$("$@" 2>&1); then
+        report PASS "$label" "Query completed"
+        [ -z "$output" ] || printf '%s\n' "$output"
+    else
+        report UNKNOWN "$label" "$1 could not complete the query"
+        [ -z "$output" ] || printf '%s\n' "$output"
+    fi
+}
+
+check_boot() {
+    if [ ! -r "$sysfs/firmware" ] || [ ! -x "$sysfs/firmware" ]; then
+        report UNKNOWN "Boot mode" "Firmware interface is unavailable"
+        report UNKNOWN "Secure Boot" "EFI availability could not be determined"
+        return
+    fi
+
+    if [ ! -d "$sysfs/firmware/efi" ]; then
+        report WARN "Boot mode" "EFI interface is absent. This image targets x86-64 UEFI."
+        report UNKNOWN "Secure Boot" "EFI interface is absent"
+        return
+    fi
+
+    report PASS "Boot mode" "UEFI detected"
+    if ! command -v mokutil >/dev/null 2>&1; then
+        report UNKNOWN "Secure Boot" "mokutil is unavailable"
+    elif state=$(mokutil --sb-state 2>&1); then
+        case "$state" in
+            "SecureBoot enabled"*) report PASS "Secure Boot" "Enabled" ;;
+            "SecureBoot disabled"*) report WARN "Secure Boot" "Disabled" ;;
+            *) report UNKNOWN "Secure Boot" "Firmware state could not be interpreted" ;;
+        esac
+    else
+        report UNKNOWN "Secure Boot" "EFI variables could not be read"
+    fi
+    [ -z "${state:-}" ] || printf '%s\n' "$state"
+}
+
+check_class() {
+    label=$1
+    class=$2
+    if [ ! -r "$sysfs/class" ] || [ ! -x "$sysfs/class" ]; then
+        report UNKNOWN "$label" "sysfs class directory is unavailable"
+    elif [ ! -d "$class" ]; then
+        report PASS "$label" "Optional interface is absent"
+    elif [ ! -r "$class" ] || [ ! -x "$class" ]; then
+        report UNKNOWN "$label" "Interface is inaccessible"
+    else
+        for device in "$class"/*; do
+            if [ -e "$device" ] || [ -L "$device" ]; then
+                report PASS "$label" "Interface detected"
+                return
+            fi
+        done
+        report PASS "$label" "No devices exposed by the optional interface"
+    fi
+}
+
+device_driver() (
+    cd -P "$1" 2>/dev/null || exit 1
+    while [ "$PWD" != / ]; do
+        if driver=$(readlink driver 2>/dev/null); then
+            printf '%s' "${driver##*/}"
+            exit 0
+        fi
+        cd -P .. || exit 1
+    done
+    exit 1
+)
+
+describe_device() {
+    driver=$(device_driver "$2") || driver=unknown
+    printf "  %s (driver: %s)\n" "$1" "$driver"
+    for id_path in "$2" "$2/id"; do
+        if [ -r "$id_path/vendor" ] && [ -r "$id_path/device" ]; then
+            IFS= read -r vendor < "$id_path/vendor"
+            IFS= read -r product < "$id_path/device"
+        elif [ -r "$id_path/vendor" ] && [ -r "$id_path/product" ]; then
+            IFS= read -r vendor < "$id_path/vendor"
+            IFS= read -r product < "$id_path/product"
+        else
+            continue
+        fi
+        printf "    ID %s:%s\n" "$vendor" "$product"
+        break
+    done
+}
+
+check_touchpad() {
+    if [ ! -r "$sysfs/class/input" ] || [ ! -x "$sysfs/class/input" ]; then
+        report UNKNOWN "Touchpad" "Input interface is unavailable"
+        return
+    fi
+    if ! command -v udevadm >/dev/null 2>&1; then
+        report UNKNOWN "Touchpad" "udevadm is unavailable"
+        return
+    fi
+
+    found=no
+    incomplete=no
+    for event in "$sysfs/class/input"/event*; do
+        [ -e "$event" ] || continue
+        if ! properties=$(udevadm info --query=property --path="$event" 2>/dev/null); then
+            incomplete=yes
+            continue
+        fi
+        case "$properties" in
+            *'
+ID_INPUT_TOUCHPAD=1
+'*|ID_INPUT_TOUCHPAD=1|ID_INPUT_TOUCHPAD=1'
+'*|*'
+ID_INPUT_TOUCHPAD=1')
+                if [ "$found" = no ]; then
+                    report PASS "Touchpad" "Touchpad registered"
+                    found=yes
+                fi
+                name=${event##*/}
+                IFS= read -r name 2>/dev/null < "$event/device/name" || name=${event##*/}
+                describe_device "$name" "$event/device"
+                ;;
+        esac
+    done
+
+    if [ "$incomplete" = yes ]; then
+        report UNKNOWN "Touchpad" "Some input events could not be classified"
+    elif [ "$found" = no ]; then
+        report WARN "Touchpad" "No touchpad registered"
+    fi
+}
+
+check_wifi() {
+    if [ ! -r "$sysfs/class/net" ] || [ ! -x "$sysfs/class/net" ]; then
+        report UNKNOWN "Wi-Fi" "Network interface directory is unavailable"
+        return
+    fi
+    found=no
+    for interface in "$sysfs/class/net"/*; do
+        if [ -d "$interface/wireless" ] || [ -L "$interface/phy80211" ]; then
+            if [ "$found" = no ]; then
+                report PASS "Wi-Fi" "Wireless interface registered"
+                found=yes
+            fi
+            describe_device "${interface##*/}" "$interface/device"
+        fi
+    done
+
+    if [ "$found" = no ]; then
+        report WARN "Wi-Fi" "No wireless interface registered"
+    fi
+}
+
+disk_contains() {
+    printf '%s\n' "$1" | awk -v id="$2" '$1 == id { found = 1 } END { exit !found }'
+}
+
+check_mounted_os() {
+    case "$2" in
+        /|*[!a-zA-Z0-9_./-]*) return ;;
+    esac
+    if [ -f "$2/Windows/System32/config/SYSTEM" ] &&
+        [ -f "$2/Windows/System32/ntoskrnl.exe" ]; then
+        printf '  OS evidence on %s: Windows system files at %s\n' "$1" "$2"
+    else
+        release=$(readlink -f -- "$2/etc/os-release" 2>/dev/null) || return 0
+        case "$release" in
+            "$2"/*)
+                [ -f "$release" ] && [ -r "$release" ] || return 0
+                name=$(sed -n 's/^PRETTY_NAME=//p' "$release" | head -n 1)
+                [ -z "$name" ] || printf '  OS evidence on %s: %s at %s\n' "$1" "$name" "$2"
+                ;;
+        esac
+    fi
+}
+
+check_storage() {
+    printf '\n=== Installation plan (read-only) ===\n'
+    printf '%s\n' \
+        'Whole-disk WIC: dedicated disk only, with 512-byte logical sectors.' \
+        'Capacity: the target must fit the exact WIC. 4 GiB is the planning minimum.' \
+        'Alongside another OS: review unallocated space for a separate partition-based installer.'
+
+    if ! inventory=$(lsblk -o NAME,SIZE,TYPE,FSTYPE,FSAVAIL,MODEL,TRAN,RM,MOUNTPOINTS 2>/dev/null) ||
+        ! disks=$(lsblk -bdnro PATH,MAJ:MIN,TYPE,SIZE,RO,LOG-SEC 2>/dev/null); then
+        report UNKNOWN "Storage" "lsblk could not enumerate storage; no target recommendations"
+        return
+    fi
+    printf '%s\n' "$inventory"
+    physical=$(printf '%s\n' "$disks" | awk '$3 == "disk"')
+    if [ -z "$physical" ]; then
+        report UNKNOWN "Storage" "No whole disks found; no target recommendations"
+        return
+    fi
+
+    root_info=$(findmnt -rn -o MAJ:MIN,FSTYPE --mountpoint / 2>/dev/null) || root_info=
+    root_id=${root_info%% *}
+    case "$root_info" in
+        *' ext2'|*' ext3'|*' ext4'|*' xfs'|*' f2fs') ;;
+        *) root_id= ;;
+    esac
+    mounts=$(findmnt -rn -o MAJ:MIN,TARGET 2>/dev/null) || mounts=
+    swaps=$(swapon --show=NAME --noheadings --raw 2>/dev/null) || swaps=unknown
+    swap_ids=
+    while IFS= read -r swap; do
+        [ -n "$swap" ] || continue
+        if [ -b "$swap" ]; then
+            swap_id=$(lsblk -dnro MAJ:MIN -- "$swap" 2>/dev/null) || swap_id=
+        elif [ -f "$swap" ]; then
+            swap_id=$(findmnt -rn -o MAJ:MIN --target "$swap" 2>/dev/null) || swap_id=
+        else
+            swap_id=
+        fi
+        if [ -z "$swap_id" ]; then
+            swaps=unknown
+            break
+        fi
+        swap_ids="$swap_ids $swap_id"
+    done <<EOF_SWAP
+$swaps
+EOF_SWAP
+
+    root_disks=
+    topology_ok=yes
+    while read -r disk disk_id type bytes readonly sector; do
+        topology=$(lsblk -nro MAJ:MIN,TYPE -- "$disk" 2>/dev/null) || topology=
+        if [ -z "$topology" ] || ! disk_contains "$topology" "$disk_id"; then
+            topology_ok=no
+        elif [ -n "$root_id" ] && disk_contains "$topology" "$root_id"; then
+            root_disks="$root_disks $disk"
+        fi
+    done <<EOF_DISKS
+$physical
+EOF_DISKS
+
+    case "${root_disks# }" in
+        ''|*' '*) root_known=no ;;
+        *) root_known=yes ;;
+    esac
+    if [ "$root_known" = yes ] && [ "$topology_ok" = yes ]; then
+        report PASS "Boot disk" "Root device $root_id; PROTECTED:${root_disks}"
+    else
+        report UNKNOWN "Boot disk" "Root device or parent disk is ambiguous; no target recommendations"
+        [ -z "$root_disks" ] || printf '  PROTECTED (possible root disks):%s\n' "$root_disks"
+    fi
+
+    if [ -z "$mounts" ] || [ "$swaps" = unknown ]; then
+        report UNKNOWN "Storage activity" "Mount or swap state could not be established; no target recommendations"
+    fi
+    printf '%s\n' 'Existing OS names require readable evidence. Unmounted filesystems are not inspected.'
+
+    while read -r disk disk_id type bytes readonly sector; do
+        printf '\n%s (%s bytes)\n' "$disk" "$bytes"
+        if ! topology=$(lsblk -nro MAJ:MIN,TYPE -- "$disk" 2>/dev/null) ||
+            ! disk_contains "$topology" "$disk_id"; then
+            report UNKNOWN "Storage target" "$disk: topology unavailable"
+            continue
+        fi
+        if partitions=$(lsblk -nro PATH,PARTTYPE -- "$disk" 2>/dev/null); then
+            printf '%s\n' "$partitions" | awk 'tolower($2) == "c12a7328-f81f-11d2-ba4b-00a0c93ec93b" || tolower($2) == "0xef" { print "  EFI System Partition: " $1 }'
+        else
+            report UNKNOWN "Storage layout" "$disk: partition types unavailable"
+        fi
+
+        active=no
+        boot_mount=no
+        while read -r mounted mountpoint; do
+            [ -n "$mounted" ] && disk_contains "$topology" "$mounted" || continue
+            active=yes
+            case "$mountpoint" in /boot|/boot/efi|/efi) boot_mount=yes ;; esac
+            check_mounted_os "$mounted" "$mountpoint"
+        done <<EOF_MOUNTS
+$mounts
+EOF_MOUNTS
+        for swap_id in $swap_ids; do
+            if disk_contains "$topology" "$swap_id"; then
+                active=yes
+                printf '  Active swap device: %s\n' "$swap_id"
+            fi
+        done
+
+        if { [ -n "$root_id" ] && disk_contains "$topology" "$root_id"; } || [ "$boot_mount" = yes ]; then
+            printf '%s\n' '  PROTECTED: running root or mounted boot filesystem. Unsuitable for installation.'
+        elif [ "$active" = yes ]; then
+            report WARN "Storage target" "$disk: in use by a mount or active swap"
+        elif [ "$readonly" != 0 ]; then
+            printf '%s\n' '  Ineligible: read-only disk.'
+        elif [ "$topology" != "$disk_id disk" ]; then
+            report WARN "Storage target" "$disk: existing partitions or stacked devices; whole-disk WIC would overwrite data"
+            if gaps=$(sfdisk --list-free --bytes -- "$disk" 2>/dev/null); then
+                printf '  Unallocated partition-table space:\n%s\n' "$gaps"
+            else
+                report UNKNOWN "Unallocated space" "$disk: partition table unavailable to this session"
+            fi
+        elif [ "$root_known" != yes ] || [ "$topology_ok" != yes ] ||
+            [ -z "$mounts" ] || [ "$swaps" = unknown ]; then
+            printf '%s\n' '  Withheld: root topology or storage activity could not be verified.'
+        elif [ "$sector" != 512 ] || ! [ "$bytes" -ge 4294967296 ] 2>/dev/null; then
+            printf '%s\n' '  Ineligible: requires 512-byte logical sectors and at least 4 GiB for this plan.'
+        elif ! signatures=$(wipefs --no-act --noheadings --output TYPE -- "$disk" 2>/dev/null); then
+            report UNKNOWN "Storage target" "$disk: signatures could not be checked"
+        elif [ -n "$signatures" ]; then
+            report WARN "Storage target" "$disk: existing disk signatures; review data before deployment"
+        else
+            printf '%s\n' '  Candidate for manual review: no partitions or signatures detected.'
+        fi
+    done <<EOF_PLAN
+$physical
+EOF_PLAN
+    printf '\n'
+}
+
+check_services() {
+    if ! command -v systemctl >/dev/null 2>&1; then
+        report UNKNOWN "Failed services" "systemctl is unavailable"
+    elif services=$(systemctl list-units --type=service --state=failed --no-legend --no-pager 2>&1); then
+        if [ -z "$services" ]; then
+            report PASS "Failed services" "None reported"
+        else
+            report WARN "Failed services" "systemd reported failed units"
+            printf '%s\n' "$services"
+        fi
+    else
+        report UNKNOWN "Failed services" "systemd could not be queried"
+        [ -z "$services" ] || printf '%s\n' "$services"
+    fi
+}
+
+printf '%s\n' '=== CIP-Core Preflight 0.4 (read-only) ==='
+probe "Operating system" cat /etc/os-release
+case "$(uname -m 2>/dev/null)" in
+    x86_64) report PASS "Architecture" "x86-64" ;;
+    '') report UNKNOWN "Architecture" "uname could not identify the architecture" ;;
+    *) report FAIL "Architecture" "This image requires x86-64" ;;
+esac
+check_boot
+probe "CPU" lscpu
+probe "Memory" free -h
+check_storage
+probe "PCI" lspci -nnk
+probe "USB" lsusb
+probe "Network interfaces" ip -br link
+check_wifi
+check_touchpad
+check_class "TPM" "$sysfs/class/tpm"
+check_class "Power supplies" "$sysfs/class/power_supply"
+check_services
+
+printf '\nPASS=%s WARN=%s FAIL=%s UNKNOWN=%s\n' "$pass" "$warn" "$fail" "$unknown"
+if [ "$fail" -gt 0 ]; then
+    exit 2
+elif [ "$warn" -gt 0 ] || [ "$unknown" -gt 0 ]; then
+    exit 1
+fi
+exit 0

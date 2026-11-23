@@ -1,0 +1,9 @@
+header:
+  version: 14
+
+target: linux-cip
+
+local_conf_header:
+  cip612_lab: |
+    PREFERRED_VERSION_linux-cip = "6.12.111-cip32"
+    KERNEL_NAME_PROVIDED = "6.12.111-cip32"

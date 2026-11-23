@@ -1,0 +1,16 @@
+header:
+  version: 14
+
+machine: x86-uefi
+distro: cip-core-bookworm
+target: cip-core-image-xfce
+
+local_conf_header:
+  xfce_wifi: |
+    CIP_XFCE_INTEL_WIFI = "1"
+  xfce_touchpad: |
+    CIP_XFCE_I2C_TOUCHPAD = "1"
+  xfce_audio: |
+    CIP_XFCE_INTEL_AUDIO = "1"
+  xfce_storage: |
+    CIP_XFCE_REMOVABLE_STORAGE = "1"

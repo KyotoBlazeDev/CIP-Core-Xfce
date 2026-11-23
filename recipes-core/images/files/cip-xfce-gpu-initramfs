@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+set -e
+
+case "${1:-}" in
+    prereqs) exit 0 ;;
+esac
+
+. /usr/share/initramfs-tools/hook-functions
+
+# Include modules and available firmware. PCI discovery selects the actual driver.
+for driver in i915 amdgpu radeon nouveau virtio_gpu vmwgfx; do
+    manual_add_modules "$driver"
+done
