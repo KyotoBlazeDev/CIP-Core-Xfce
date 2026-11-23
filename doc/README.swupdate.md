@@ -23,13 +23,14 @@ device = "C:BOOT0:linux.efi->${ABROOTFS_PART_UUID_A},C:BOOT1:linux.efi->${ABROOT
 The variables `ABROOTFS_PART_UUID_A` and `ABROOTFS_PART_UUID_B` contain partition uuids. The handler searches
 for the matching device and SWUpdate writes the image to the selected device.
 
-> :exclamation: For production image the content of the variable
-`ABROOTFS_PART_UUID_A` and `ABROOTFS_PART_UUID_B` must contain project specific
-values.
+> [!IMPORTANT]
+> Use project-specific values for `ABROOTFS_PART_UUID_A` and
+> `ABROOTFS_PART_UUID_B` in production images.
 
 ## SWUpdate Efibootguard update
 
-:warning: **If the efibootguard binary is corrupted the system can no longer boot**
+> [!WARNING]
+> A corrupted EFI Boot Guard binary prevents the system from booting.
 
 If you build a CIP Core image with SWUpdate support an additional swu will
 be generated. This swu ends on `*-ebg.swu` and contains a sw-description to

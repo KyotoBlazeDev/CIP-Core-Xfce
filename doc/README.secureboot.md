@@ -306,10 +306,10 @@ default provider of this in isar-cip-core.
 
 ### Manual secure boot certificate enrollment
 
-> :exclamation:**IMPORTANT** This document is not for generating a Machine Owner Key(MOK).
-
-> :exclamation:**IMPORTANT** Enrollment of secure boot keys must occur
-> in a secure environment.
+> [!IMPORTANT]
+> Enroll Secure Boot keys in a secure environment. This procedure covers
+> enrollment of platform certificates. Machine Owner Key (MOK) generation
+> is outside its scope.
 
 The certificates for the following keys need to be enrolled onto the device:
  - The Platform Key (PK)

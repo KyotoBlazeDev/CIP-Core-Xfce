@@ -1,4 +1,55 @@
-# CIP Core (Generic Profile) Demonstration and Test Images
+# CIP-Core Xfce Edition
+
+CIP-Core Xfce Edition is a downstream desktop image for **x86-64 UEFI PCs**
+built on Debian Trixie, Xfce, Isar, and the Linux CIP kernel. The image includes
+desktop graphics and Wi-Fi profiles, first-boot enrollment, and recovery tools.
+
+> [!NOTE]
+> Trixie is the development baseline. The Linux 6.12-CIP desktop image is
+> under validation, and the Forky profile is experimental.
+
+## Build the Trixie Xfce image
+
+Use a Linux build environment with Git and Docker or Podman. The example
+selects Linux 6.12.111-cip32 and the broad GPU and Wi-Fi profiles.
+
+```sh
+git clone https://github.com/KyotoBlazeDev/CIP-Core-Xfce.git
+cd CIP-Core-Xfce
+./kas-container --isar-privileged build \
+  kas-cip.yml:kas/board/x86-uefi.yml:kas-xfce-broad-gpu.yml:kas-xfce-broad-wifi.yml:kas-xfce-cip32.yml
+```
+
+The build writes its artifacts to `build/tmp/deploy/images/x86-uefi/`.
+
+| Artifact | Purpose |
+| --- | --- |
+| `.wic` | Bootable disk image for USB or VM testing |
+| `.wic.spdx.json` | SPDX software bill of materials for the matching WIC |
+| `.wic.manifest` | Package and version list for the matching WIC |
+
+## Boot and test
+
+> [!WARNING]
+> Flashing the WIC overwrites the selected drive. Verify the target by
+> model and capacity before writing. To evaluate the desktop, boot a
+> dedicated USB stick and leave the internal drive alone.
+
+Boot in UEFI mode. Complete first-user setup at the console, then sign in
+to Xfce. See the [Preflight and installer guide](recipes-support/cip-core-installer/README.md)
+for enrollment and storage checks.
+
+The ThinkPad L15 Gen 2 AMD passed AMDGPU and Wi-Fi checks on the 6.1 build.
+The Yoga Slim 7 Carbon passed touchpad and Iris Xe checks on the 6.12 test
+kernel. These results apply to those builds. The RTX 5060 was detected over
+PCI, but Nouveau on the tested 6.1 image could not initialize it. See the
+[GPU kernel configuration](recipes-kernel/linux/files/xfce-broad-gpu.cfg) for enabled drivers.
+
+For changes and bug reports, see [Contributing](CONTRIBUTING.md). The
+[upstream Isar CIP-Core project](https://gitlab.com/cip-project/cip-core/isar-cip-core)
+maintains the generic image layer.
+
+## CIP Core Generic Profile demonstration and test images
 
 This generates bootable images for virtual and physical targets using the
 Debian package set of the [CIP](https://www.cip-project.org/) Core Generic
@@ -8,7 +59,7 @@ The build system used for this is [Isar](https://github.com/ilbers/isar), an
 image generator that assembles Debian binaries or builds individual packages
 from scratch.
 
-## Building Target Images
+### Building Target Images
 
 Install docker or podman. For true unprivileged builds, podman is recommended.
 See [kas documentation](https://kas.readthedocs.io/en/latest/userguide/kas-container.html)
@@ -27,7 +78,7 @@ the BeagleBone Black target image with real-time kernel, e.g.:
     ./kas-container build kas-cip.yml:kas/board/bbb.yml:kas/opt/rt.yml
 
 
-## Running Target Images
+### Running Target Images
 
 When having built a virtual QEMU target image, this can be started directly.
 Run, e.g.,
@@ -54,7 +105,7 @@ or via bmap-tools
 
     bmaptool copy build/tmp/deploy/images/bbb/cip-core-image-cip-core-buster-bbb.wic /dev/<medium-device>
 
-## Documentation
+### Documentation
 
 The following topics are in separate READMEs:
  - [Secureboot](./doc/README.secureboot.md)
@@ -64,7 +115,7 @@ The following topics are in separate READMEs:
  - [Factory-reset](./doc/README.factory-reset.md)
  - [Release policy](./doc/README_version-release-policy.md)
 
-## Community Resources
+### Community Resources
 
 Mailing list:
 
@@ -85,7 +136,7 @@ Continuous integration:
 Please see [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution process.
 
 
-## License
+### License
 
 Unless otherwise stated in the respective file, files in this layer are
 provided under the MIT license, see COPYING file. Patches (files ending with

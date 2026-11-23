@@ -58,11 +58,14 @@ require review. Unallocated partition-table regions are displayed only when
 the session can read the layout. Filesystem free space is different from
 unallocated disk space.
 
-For the Yoga layout, the booted USB should be protected. The internal SSD
-with an existing EFI and Arch partition should be flagged even if it has
-100 GiB unallocated. Using that space requires a separate partition-based
-installer. Writing a whole-disk WIC would replace the internal partition
-table. Preflight performs no installation, formatting or partition changes.
+> [!WARNING]
+> Writing a whole-disk WIC replaces the target's partition table. Installing
+> into unallocated space on a disk with existing partitions requires a
+> partition-based installer.
+
+For the Yoga example, Preflight should protect the booted USB and flag the
+internal SSD with existing EFI and Arch partitions even if it has 100 GiB
+unallocated. Preflight itself is read-only.
 
 ## NVMe over Fabrics
 
@@ -81,11 +84,10 @@ chosen discovery configuration. The stock Xfce kernel lacks NVMe-oF support.
 
 ## Production credentials
 
-The Xfce image recipe embeds a shared SHA-512 crypt password hash for cipuser,
-and the base KAS profile supplies a development root password. Treat these as
-development credentials. Anyone with the recipe or image can obtain the shared
-hash for offline guessing, and one recovered password applies to all images
-that use it.
+> [!IMPORTANT]
+> The Xfce recipe and base kas profile include development credentials. Every
+> image that retains the shared password hash has the same exposure if the
+> password is recovered. See the Trixie account policy below.
 
 For production, use a site overlay that ships root and cipuser with locked
 passwords. Verify the resulting account state and use trusted per-device
