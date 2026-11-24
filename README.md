@@ -114,6 +114,15 @@ or via bmap-tools
 
     bmaptool copy build/tmp/deploy/images/bbb/cip-core-image-cip-core-buster-bbb.wic /dev/<medium-device>
 
+### Xfce boot smoke test
+
+Boot the Xfce WIC image with UEFI in a virtual machine. Confirm that the login
+screen appears, then copy `tests/xfce-boot-smoke.sh` into the guest and run
+`sh xfce-boot-smoke.sh` from a guest terminal. It checks UEFI, the running CIP
+kernel, the Xfce session and LightDM packages, and the active display manager.
+Pass an expected `uname -r` value as the first argument to check an exact
+kernel release.
+
 ### Documentation
 
 The following topics are in separate READMEs:
