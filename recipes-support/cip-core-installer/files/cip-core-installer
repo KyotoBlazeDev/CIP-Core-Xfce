@@ -48,6 +48,7 @@ probe() {
 }
 
 check_boot() {
+    boot_mode=unknown
     if [ ! -r "$sysfs/firmware" ] || [ ! -x "$sysfs/firmware" ]; then
         report UNKNOWN "Boot mode" "Firmware interface is unavailable"
         report UNKNOWN "Secure Boot" "EFI availability could not be determined"
@@ -60,6 +61,7 @@ check_boot() {
         return
     fi
 
+    boot_mode=uefi
     report PASS "Boot mode" "UEFI detected"
     if ! command -v mokutil >/dev/null 2>&1; then
         report UNKNOWN "Secure Boot" "mokutil is unavailable"
@@ -332,6 +334,8 @@ EOF_MOUNTS
         elif [ "$root_known" != yes ] || [ "$topology_ok" != yes ] ||
             [ -z "$mounts" ] || [ "$swaps" = unknown ]; then
             printf '%s\n' '  Withheld: root topology or storage activity could not be verified.'
+        elif [ "$boot_mode" != uefi ]; then
+            printf '%s\n' '  Withheld: UEFI boot mode could not be verified.'
         elif [ "$sector" != 512 ] || ! [ "$bytes" -ge 4294967296 ] 2>/dev/null; then
             printf '%s\n' '  Ineligible: requires 512-byte logical sectors and at least 4 GiB for this plan.'
         elif ! signatures=$(wipefs --no-act --noheadings --output TYPE -- "$disk" 2>/dev/null); then

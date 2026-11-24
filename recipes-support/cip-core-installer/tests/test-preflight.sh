@@ -35,6 +35,14 @@ expect() {
     fi
 }
 
+reject() {
+    if grep -Fq -- "$1" "$fixture/output"; then
+        printf 'Unexpected output: %s\n' "$1" >&2
+        cat "$fixture/output" >&2
+        exit 1
+    fi
+}
+
 for command in cat lscpu free lsblk lspci lsusb ip systemctl; do
     stub "$command" 'exit 0'
 done
@@ -81,7 +89,12 @@ case "$*" in
         [ "${STORAGE_LAYOUT:-usb}" != missing ] || exit 0
         printf "/dev/sda 8:0 disk 32000000000 0 512\n/dev/nvme0n1 259:0 disk 1000000000000 0 512\n"
         if [ "${STORAGE_LAYOUT:-usb}" != baseline ]; then
-            printf "/dev/sdb 8:16 disk 64000000000 0 512\n"
+            case "${STORAGE_LAYOUT:-usb}" in
+                small) size=4294967295 ;;
+                threshold) size=4294967296 ;;
+                *) size=64000000000 ;;
+            esac
+            printf "/dev/sdb 8:16 disk %s 0 512\n" "$size"
         fi ;;
     "-nro MAJ:MIN,TYPE -- /dev/sda")
         printf "8:0 disk\n8:1 part\n8:2 part\n"
@@ -140,6 +153,21 @@ expect 'EFI System Partition: /dev/nvme0n1p1'
 expect '[WARN] Storage target - /dev/nvme0n1: existing partitions'
 expect 'Unallocated partition-table space:'
 expect 'Candidate for manual review'
+if ! awk '/^\/dev\// { disk = $1 } /PROTECTED: running root/ && disk == "/dev/sda" { protected = 1 } /Candidate for manual review/ && disk != "/dev/sdb" { unsafe = 1 } END { exit (!protected || unsafe) }' "$fixture/output"; then
+    cat "$fixture/output" >&2
+    exit 1
+fi
+STORAGE_LAYOUT=small run 1
+expect 'Ineligible: requires 512-byte logical sectors and at least 4 GiB'
+reject 'Candidate for manual review'
+STORAGE_LAYOUT=threshold run 1
+expect 'Candidate for manual review'
+rmdir "$sysfs/firmware/efi"
+STORAGE_LAYOUT=usb run 1
+expect '[WARN] Boot mode - EFI interface is absent'
+expect 'Withheld: UEFI boot mode could not be verified.'
+reject 'Candidate for manual review'
+mkdir "$sysfs/firmware/efi"
 STORAGE_LAYOUT=nvme run 1
 expect '[PASS] Boot disk - Root device 259:2; PROTECTED: /dev/nvme0n1'
 STORAGE_LAYOUT=missing run 1
