@@ -1,15 +1,17 @@
-Contributing to isar-cip-core
+Contributing to CIP-Core-Xfce
 =============================
 
-Contributions to isar-cip-core are always welcome. This document explains
+Contributions to CIP-Core-Xfce are always welcome. This document explains
 the general requirements on contributions and the recommended preparation
 steps. It also sketches the typical integration process of patches.
+
+Unlike the original isar-cip-core, this contributing have added several refinements to make easier to understand by contributors.
 
 
 Contribution Checklist
 ----------------------
 
-- use git to manage your changes [*recomended*]
+- use git to manage your changes [**recomended**]
 
 - add the required copyright header to each new file introduced, see
   [licensing information](README.md#license) [**required**]
@@ -33,7 +35,7 @@ Contribution Checklist
     - to certify the "Developer's Certificate of Origin", see below
     - check with your employer when not working on your own!
 
-- post patches to mailing list (cip-dev@lists.cip-project.org) [**required**]
+- post patches to mailing list (**further upstream only in isar-cip-core**) (cip-dev@lists.cip-project.org) [**optional but recommended**]
     - use `git format-patch/send-email` if possible
     - prefix patches with `[isar-cip-core]`, e.g. via
       `git format-patch --subject-prefix="isar-cip-core][PATCH" ...`
@@ -95,12 +97,12 @@ Contribution Integration Process
 2. accepted patches merged into next branch
 
 3. further testing done by community, including CI build tests and code
-   analyzer runs
+   analyzer runs (not implemented yet)
 
 4. if no new problems or discussions showed up, acceptance into master
     * grace period for master: about 3 days
     * urgent fixes may be applied sooner
 
-gitlab facilities are not used for the review process so that people can follow
+github facilities are not used for the review process so that people can follow
 all changes and related discussions at a single stop, the mailing list. This
-may change in the future if gitlab should improve their email integration.
+may change in the future if github should improve their email integration.
