@@ -148,12 +148,12 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution process.
 ### Credits
 
 - The Civil Infrastructure Platform (CIP) and the
-  [ISAR CIP Core contributors](https://gitlab.com/cip-project/cip-core/isar-cip-core/-/graphs/master)
-  maintain the upstream recipes and build configurations this project builds on.
+  [ISAR CIP Core contributors](https://gitlab.com/cip-project/cip-core/isar-cip-core/-/graphs/master) maintain the upstream recipes and build configurations this project builds on.
 - The [Isar contributors](https://github.com/ilbers/isar/graphs/contributors)
   develop the image build system. The [Debian](https://www.debian.org/) and
   [Xfce](https://www.xfce.org/) communities provide the package base and desktop
   environment.
+- The [Linux kernel community](https://www.kernel.org/) and CIP kernel maintainers provide the kernel foundation, hardware support, security fixes, and long-term maintenance.
 - [KyotoBlazeDev](https://github.com/KyotoBlazeDev) contributed the Xfce image
   recipes, hardware profiles, installer integration, and build documentation in
   this repository.
