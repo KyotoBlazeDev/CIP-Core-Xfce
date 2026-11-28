@@ -34,7 +34,7 @@ The build writes its artifacts to `build/tmp/deploy/images/x86-uefi/`.
 On November 23, 2026, all 127 BitBake tasks passed from GitHub source
 commit [9344123](https://github.com/KyotoBlazeDev/CIP-Core-Xfce/commit/9344123bf5f96163b62a36d1572fa88de13248ce).
 The build produced the Trixie x86-UEFI WIC and its matching SPDX 2.3 report.
-The WIC manifest lists kernel package version
+The WIC manifest lists the kernel package version
 `6.12.111-cip32+r0+yoga1+gpu1+wifi1`.
 
 ## Boot and test
@@ -159,7 +159,8 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution process.
 - The Civil Infrastructure Platform (CIP) and the
   [ISAR CIP Core contributors](https://gitlab.com/cip-project/cip-core/isar-cip-core/-/graphs/master) maintain the upstream recipes and build configurations this project builds on.
 - The [Isar contributors](https://github.com/ilbers/isar/graphs/contributors)
-  develop the image build system. The [Debian](https://www.debian.org/) and
+  develop the image build system.
+- The [Debian](https://www.debian.org/) and
   [Xfce](https://www.xfce.org/) communities provide the package base and desktop
   environment.
 - The [Linux kernel community](https://www.kernel.org/) and CIP kernel maintainers provide the kernel foundation, hardware support, security fixes, and long-term maintenance.
@@ -167,9 +168,14 @@ Please see [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution process.
   recipes, hardware profiles, installer integration, and build documentation in
   this repository.
 
+Thanks to all contributors and maintainers of isar-cip-core! Contributions to downstream are welcome and greatly appreciated! For upstream, please report any bugs or merges through the official Civil Infrastructure Platform (CIP) mailing list and GitLab Work (Issues).
+
+### Side Notes
+All source code is licensed under the MIT license, which allows our work to progress. The goal is to power embedded industrial PCs and portable industrial PCs. Check the COPYING file for more details at the backup-xfce-recipes.
+
 ### License
 
 Unless otherwise stated in the respective file, files in this layer are
-provided under the MIT license, see COPYING file. Patches (files ending with
+provided under the MIT license; see COPYING file. Patches (files ending with
 .patch) are licensed according to their target project and file, typically
 GPLv2.
