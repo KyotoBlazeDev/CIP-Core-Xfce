@@ -16,22 +16,33 @@ stub() {
     chmod +x "$bin/$1"
 }
 
-stub id 'echo 0'
-stub getent '[ "$TEST_SCENARIO" = existing ]'
-stub adduser 'printf "adduser %s\n" "$*" >> "$TEST_LOG"'
+stub id 'if [ "$#" = 1 ]; then echo 0; else cut -d: -f3 "$TEST_LOG.account.$2"; fi'
+stub getent 'if [ "$TEST_SCENARIO" = existing ]; then exit 0; fi
+[ "$1" = passwd ] && [ -f "$TEST_LOG.account.$2" ] && cat "$TEST_LOG.account.$2"'
+stub adduser 'printf "adduser %s\n" "$*" >> "$TEST_LOG"
+mkdir "$5"
+printf "%s:x:1001:1001:%s,,,:%s:/bin/bash\n" "$6" "$3" "$5" > "$TEST_LOG.account.$6"
+[ "$TEST_SCENARIO" != account_interrupted ]'
 stub passwd 'if [ "$1" = -S ]; then
     if [ -e "$TEST_LOG.password" ]; then echo "$2 P"; else echo "$2 L"; fi
     exit 0
 fi
 printf "passwd %s\n" "$*" >> "$TEST_LOG"; [ "$TEST_SCENARIO" != password_failure ] && touch "$TEST_LOG.password"'
 
-stub usermod 'printf "usermod %s\n" "$*" >> "$TEST_LOG"; [ "$TEST_SCENARIO" != admin_failure ]'
+stub usermod '[ "$1" != -c ] || exit 0
+printf "usermod %s\n" "$*" >> "$TEST_LOG"; [ "$TEST_SCENARIO" != admin_failure ]'
 
 run() {
     expected=$1
     name=$2
     actual=0
-    printf '%s\n' "$name" "${3:-}" |
+    # Let script initialize the PTY before sending input or closing the pipe.
+    {
+        sleep 0.1
+        # Early-exit cases can close the pipe before the fixture submits input.
+        printf '%s\n' "$name" "${3:-}" 2>/dev/null || :
+        sleep 0.1
+    } |
         PATH="$bin:$PATH" script -qec "sh '$fixture/setup'" /dev/null > "$fixture/output" || actual=$?
     if [ "$expected" != "$actual" ]; then
         cat "$fixture/output" >&2
@@ -75,7 +86,7 @@ rm "$complete" "$TEST_LOG.password"
 : > "$pending"
 : > "$TEST_LOG"
 run 0 test-user
-grep -Fq "adduser --disabled-password --gecos  --home $fixture/home/test-user test-user" "$TEST_LOG"
+grep -Eq "^adduser --disabled-password --gecos [a-f0-9-]+ --home $fixture/home/test-user test-user$" "$TEST_LOG"
 grep -Fxq 'passwd test-user' "$TEST_LOG"
 ! grep -q '^usermod ' "$TEST_LOG"
 test ! -e "$pending"
@@ -99,5 +110,22 @@ run 0 required-admin
 printf '%s\n' 'passwd required-admin' 'usermod -aG sudo required-admin' > "$fixture/expected"
 tail -n 2 "$TEST_LOG" | cmp - "$fixture/expected"
 test ! -e "$pending"
+test -f "$complete"
+mv "$complete" "$pending"
+rm "$TEST_LOG.password"
+: > "$TEST_LOG"
+TEST_SCENARIO=account_interrupted run 1 interrupted
+test -f "$pending.intent"
+test ! -e "$pending.account"
+test ! -e "$TEST_LOG.password"
+cp "$TEST_LOG.account.interrupted" "$fixture/original-account"
+sed 's/:1001:1001:[^:]*:/:1001:1001:unrelated:/' "$fixture/original-account" > "$TEST_LOG.account.interrupted"
+run 1 interrupted
+test ! -e "$TEST_LOG.password"
+cp "$fixture/original-account" "$TEST_LOG.account.interrupted"
+run 0 interrupted
+test "$(grep -c '^adduser ' "$TEST_LOG")" = 1
+grep -Fxq 'usermod -aG sudo interrupted' "$TEST_LOG"
+test ! -e "$pending.intent"
 test -f "$complete"
 printf '%s\n' 'First-user setup fixtures passed'

@@ -84,25 +84,11 @@ chosen discovery configuration. The stock Xfce kernel lacks NVMe-oF support.
 
 ## Production credentials
 
-> [!IMPORTANT]
-> The Xfce recipe and base kas profile include development credentials. Every
-> image that retains the shared password hash has the same exposure if the
-> password is recovered. See the Trixie account policy below.
-
-For production, use a site overlay that ships root and cipuser with locked
-passwords. Verify the resulting account state and use trusted per-device
-enrollment to provision named administrator accounts with individual SSH public
-keys or unique credentials. Deliver credentials through a restricted provisioning
-channel and keep them out of source, build variables, logs, and shared images.
-Rotate any development credentials used on devices and verify that the
-production SSH and graphical login policies enforce the intended access.
-
-### Fresh Trixie images
-
-The Xfce image replaces the root and cipuser password hashes with locked
-entries. First-user setup on tty1 creates a named administrator with sudo
-access once a password has been set. If the username prompt times out, reboot
-to try again. If setup created an account but failed before finishing, boot
+Fresh Bookworm and Trixie Xfce images ship with locked passwords for root
+and cipuser. First-user setup on tty1 creates a named administrator with
+sudo access once a password has been set. If the prompt times out, reboot
+to try again. If setup was interrupted after creating the account, reboot
+and enter the same username to resume. If setup still cannot finish, boot
 trusted SystemRescue media, identify the installed CIP-ROOT by label and
 filesystem, and mount it read-write. For an existing named account, use
 `chroot /mnt/cip-root passwd USER` and

@@ -76,7 +76,7 @@ USERS += "cipuser"
 USER_cipuser[home] = "/home/cipuser"
 USER_cipuser[shell] = "/bin/bash"
 USER_cipuser[groups] = "audio video"
-USER_cipuser[password] = "$6$2JQzmDTr1dxpPAsf$WvVVPayGlWHnoMcoH00/IQM1LU64x0PMcEY/8ZBicklEvtjmXqV03ZxGH.rxZBcZ/RAlFDr"
+USER_cipuser[password] = "!"
 USER_cipuser[flags] = "create-home"
 
 # CIP-Core wireless and hardware support
@@ -114,15 +114,14 @@ cip_xfce_select_wireless_regdb() {
 # Only freshly built Xfce images should offer unauthenticated local enrollment.
 ROOTFS_POSTPROCESS_COMMAND:append = " cip_xfce_seed_first_user"
 cip_xfce_seed_first_user() {
-    run_privileged install -d -m 0700 "${ROOTFSDIR}/var/lib/cip-core"
-    run_privileged install -m 0600 /dev/null "${ROOTFSDIR}/var/lib/cip-core/first-user-pending"
-
+    run_privileged install -d -m 0700 "${ROOTFSDIR}/var/lib/cip-core" || return 1
+    for account in root cipuser; do
+        run_in_chroot "${ROOTFSDIR}" /usr/sbin/usermod --password '!' "$account" || return 1
+    done
+    run_privileged install -m 0600 /dev/null "${ROOTFSDIR}/var/lib/cip-core/first-user-pending" || return 1
+    printf '%s\n' admin-required |
+        run_privileged tee "${ROOTFSDIR}/var/lib/cip-core/first-user-pending" >/dev/null || return 1
     if [ "${DISTRO}" = cip-core-trixie ]; then
-        for account in root cipuser; do
-            run_in_chroot "${ROOTFSDIR}" /usr/sbin/usermod --password '!' "$account" || return 1
-        done
-        printf '%s\n' admin-required |
-            run_privileged tee "${ROOTFSDIR}/var/lib/cip-core/first-user-pending" >/dev/null || return 1
         printf '%s\n' 'CIP-Core Xfce' |
             run_privileged tee "${ROOTFSDIR}/etc/issue" >/dev/null || return 1
     fi

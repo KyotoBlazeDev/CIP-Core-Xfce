@@ -42,13 +42,14 @@ fi
 
 home=/home/$name
 resume=${pending}.account
+intent=${pending}.intent
 if [ -f "$resume" ]; then
     read -r enrolled uid admin < "$resume"
     if [ "$name" != "$enrolled" ] || [ "$(id -u "$name")" != "$uid" ]; then
         printf 'Enrollment pending for %s. Retry with that account.\n' "$enrolled"
         exit 1
     fi
-else
+elif [ ! -f "$intent" ]; then
     if getent passwd "$name" >/dev/null || getent group "$name" >/dev/null ||
         [ -e "$home" ] || [ -L "$home" ]; then
         printf 'The username, group or home already exists. Setup deferred.\n'
@@ -64,12 +65,42 @@ else
         fi
     fi
 
-    if ! adduser --disabled-password --gecos '' --home "$home" "$name"; then
-        printf 'Account creation failed. Check the account state before retrying.\n'
+    read -r token < /proc/sys/kernel/random/uuid
+    printf '%s %s %s\n' "$name" "$token" "$admin" > "$intent.tmp"
+    mv -- "$intent.tmp" "$intent"
+    sync -f "$intent"
+fi
+
+if [ ! -f "$resume" ]; then
+    read -r enrolled token admin < "$intent"
+    if [ "$name" != "$enrolled" ]; then
+        printf 'Enrollment pending for %s. Retry with that account.\n' "$enrolled"
         exit 1
     fi
-    printf '%s %s %s\n' "$name" "$(id -u "$name")" "$admin" > "$resume.tmp"
+    if ! entry=$(getent passwd "$name"); then
+        if ! adduser --disabled-password --gecos "$token" --home "$home" "$name"; then
+            printf 'Account creation failed. Retry with the same username.\n'
+            exit 1
+        fi
+        entry=$(getent passwd "$name")
+    fi
+    # Match the token before adopting an account created during an earlier attempt.
+    IFS=: read -r account unused uid gid gecos account_home shell <<EOF
+$entry
+EOF
+    if [ "$account" != "$name" ] || [ "${gecos%%,*}" != "$token" ] ||
+        [ "$account_home" != "$home" ] || [ ! -d "$home" ]; then
+        printf 'The pending account could not be verified.\n'
+        exit 1
+    fi
+    printf '%s %s %s\n' "$name" "$uid" "$admin" > "$resume.tmp"
     mv -- "$resume.tmp" "$resume"
+    sync -f "$resume"
+fi
+
+if [ -f "$intent" ]; then
+    usermod -c '' "$name"
+    rm -f -- "$intent"
 fi
 # A retry after password creation must never reset an established password.
 password_status=$(passwd -S "$name") || exit 1
