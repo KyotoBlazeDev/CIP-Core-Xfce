@@ -1,5 +1,7 @@
 #!/bin/sh
 
+version=0.4.2
+
 usage() {
     printf '%s\n' 'Usage: cip-core-installer [--help | --version]'
 }
@@ -9,13 +11,16 @@ case "$#" in
     1)
         case "$1" in
             --help) usage; exit 0 ;;
-            --version) printf '%s\n' 'CIP-Core Preflight 0.4'; exit 0 ;;
+            --version) printf '%s\n' "CIP-Core Preflight $version"; exit 0 ;;
             *) usage >&2; exit 64 ;;
         esac ;;
     *) usage >&2; exit 64 ;;
 esac
 
 export LC_ALL=C
+# Desktop sessions can omit directories containing read-only storage tools.
+PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+export PATH
 # Allow tests to provide synthetic firmware and device interfaces.
 sysfs=${CIP_PREFLIGHT_SYSFS:-/sys}
 pass=0
@@ -367,7 +372,7 @@ check_services() {
     fi
 }
 
-printf '%s\n' '=== CIP-Core Preflight 0.4 (read-only) ==='
+printf '%s\n' "=== CIP-Core Preflight $version (read-only) ==="
 probe "Operating system" cat /etc/os-release
 case "$(uname -m 2>/dev/null)" in
     x86_64) report PASS "Architecture" "x86-64" ;;

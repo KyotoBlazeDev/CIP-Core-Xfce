@@ -1,4 +1,4 @@
-# CIP-Core Preflight 0.4
+# CIP-Core Preflight 0.4.2
 
 Run **CIP-Core Preflight** from the Xfce Applications Menu under **System**,
 or run `/usr/sbin/cip-core-installer` from a terminal. The launcher holds the

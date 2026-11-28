@@ -76,7 +76,12 @@ case "$*" in
         esac ;;
     *) exit 1 ;;
 esac'
-stub swapon '[ "${STORAGE_LAYOUT:-usb}" != swapfail ]'
+# Require the fallback while keeping the probe independent of host swap state.
+stub swapon '
+case ":$PATH:" in
+    *:/usr/sbin:*) [ "${STORAGE_LAYOUT:-usb}" != swapfail ] ;;
+    *) exit 127 ;;
+esac'
 stub wipefs 'exit 0'
 stub sfdisk '
 [ "${STORAGE_LAYOUT:-usb}" != geometryfail ] || exit 1
@@ -115,7 +120,7 @@ esac'
 export STORAGE_LAYOUT=baseline
 
 run 0 --version
-expect 'CIP-Core Preflight 0.4'
+expect 'CIP-Core Preflight 0.4.2'
 run 0 --help
 expect 'Usage:'
 run 64 --unknown

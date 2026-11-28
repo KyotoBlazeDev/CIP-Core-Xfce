@@ -1,7 +1,7 @@
 DESCRIPTION = "CIP-Core installer preflight utility"
 MAINTAINER = "CIP-Core Project <root@localhost>"
 
-DEBIAN_DEPENDS = "util-linux, fdisk, xfce4-terminal, adduser, passwd, kbd"
+DEBIAN_DEPENDS = "util-linux, mount, fdisk, xfce4-terminal, adduser, passwd, kbd"
 SRC_URI = "file://cip-core-installer file://cip-core-preflight.desktop file://first-user-setup file://cip-core-first-user.service"
 S = "${WORKDIR}/src"
 
